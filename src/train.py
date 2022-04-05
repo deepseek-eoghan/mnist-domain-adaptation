@@ -12,6 +12,8 @@ from pytorch_lightning import (
 )
 from pytorch_lightning.loggers import LightningLoggerBase
 
+from pytorch_adapt.frameworks.lightning import Lightning
+
 from src.utils import utils
 
 log = utils.get_logger(__name__)
@@ -87,10 +89,12 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Train the model
     log.info("Starting training!")
-    trainer.fit(model=model, datamodule=datamodule)
+    # pytorch-adapt DANN
+    L_adapter = Lightning(model.adapter, validator=model.validator)
+    trainer.fit(L_adapter, datamodule=datamodule)
 
     # Get metric score for hyperparameter optimization
-    score = trainer.callback_metrics.get(config.get("optimized_metric"))
+    # score = trainer.callback_metrics.get(config.get("optimized_metric"))
 
     # Test the model
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
@@ -113,4 +117,4 @@ def train(config: DictConfig) -> Optional[float]:
         log.info(f"Best model ckpt at {trainer.checkpoint_callback.best_model_path}")
 
     # Return metric score for hyperparameter optimization
-    return score
+    return 

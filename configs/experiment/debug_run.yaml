@@ -1,0 +1,35 @@
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=mnist_adapt_example.yaml
+
+defaults:
+  - override /mode: exp.yaml
+  - override /trainer: default.yaml
+  - override /model: mnist_adapt_model.yaml
+  - override /datamodule: mnist_adapt_datamodule.yaml
+  - override /callbacks: null #wandb.yaml
+  - override /logger: wandb.yaml # wandb.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+# it's also accessed by loggers
+name: "debug_run"
+
+seed: 100101101112115101101107046097105
+
+logger:
+  wandb:
+    offline: True
+    log_model: False
+
+trainer:
+  min_epochs: 1
+  max_epochs: 2
+  gpus: 1
+
+lr_finder: null
+batch_finder: null
+test_after_training: False

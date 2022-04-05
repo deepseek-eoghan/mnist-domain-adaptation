@@ -15,6 +15,10 @@ import pickle
 import gzip
 import numpy as np
 
+from pytorch_adapt.datasets import DataloaderCreator, get_mnist_mnistm
+from pytorch_adapt.validators import IMValidator
+from pytorch_adapt.frameworks.utils import filter_datasets
+
 from src.datamodules.datasets.mnist_detection_dataset import MnistDetectionDataset
 
 import src.datamodules.mnist_generate.mnist as mnist
@@ -26,7 +30,7 @@ class Collater:
         return tuple(zip(*batch))
 
 
-class MnistDetectionDataModule(LightningDataModule):
+class MnistAdaptDataModule(LightningDataModule):
     """
     MnistDetectionDataModule for Mnist object detection.
 
@@ -46,17 +50,11 @@ class MnistDetectionDataModule(LightningDataModule):
 
     def __init__(
         self,
-        data_dir: str = "data/mnist_detection_data/",
+        data_dir: str = "data/mnistm/",
         batch_size: int = 4,
         num_workers: int = 0,
         pin_memory: bool = False,
         num_classes: int = 11,
-        num_generated_train: int = 10000,
-        num_generated_test: int = 1000,
-        generated_min_digit_size: int = 15,
-        generated_max_digit_size: int = 100,
-        generated_image_size: int = 300,
-        max_digits_per_generated_image: int = 20,
     ):
         super().__init__()
 
@@ -89,6 +87,7 @@ class MnistDetectionDataModule(LightningDataModule):
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None
         self.data_test: Optional[Dataset] = None
+        self.dataloaders = None
 
     @property
     def num_classes(self) -> int:
@@ -99,71 +98,22 @@ class MnistDetectionDataModule(LightningDataModule):
         Do not use it to assign state (self.x = y)."""
         if not os.path.exists(self.hparams.data_dir):
             print("downloading dataset")
-            X_train, Y_train, X_test, Y_test = mnist.load()
-            for dataset, (X, Y) in zip(["train", "test"], [[X_train, Y_train], [X_test, Y_test]]):
-                num_images = self.hparams.num_generated_train if dataset == "train" else self.hparams.num_generated_test
-                generate_data.generate_dataset(
-                    dataset,
-                    pathlib.Path(self.hparams.data_dir, dataset),
-                    num_images,
-                    self.hparams.generated_max_digit_size,
-                    self.hparams.generated_min_digit_size,
-                    self.hparams.generated_image_size,
-                    self.hparams.max_digits_per_generated_image,
-                    X,
-                    Y)             
-            return 
+            get_mnist_mnistm(["mnist"], ["mnistm"], folder=self.hparams.data_dir, download=True)
+        return
 
 
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
-            dataset = MnistDetectionDataset(
-                self.hparams.data_dir + "train",
-                self.hparams.data_dir + "train.json",
-                transform=self.transforms,
-            )
-
-            self.data_test = MnistDetectionDataset(
-                self.hparams.data_dir + "test",
-                self.hparams.data_dir + "test.json",
-                transform=self.notransforms,
-            )
-
-            self.data_train, self.data_val = random_split(
-                dataset=dataset,
-                lengths=(int(self.hparams.num_generated_train * 0.7), int(self.hparams.num_generated_train * 0.3)),
-                generator=torch.Generator().manual_seed(42),
-            )
-
-            self.data_val.dataset.transform = self.notransforms
+            datasets = get_mnist_mnistm(["mnist"], ["mnistm"], folder=self.hparams.data_dir, download=False)
+            dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers)
+            validator = IMValidator()
+            self.dataloaders = dc(**filter_datasets(datasets, validator))
+            self.data_train = self.dataloaders.pop("train")
+            self.data_val = list(self.dataloaders.values())
+            return            
 
     def train_dataloader(self):
-        return DataLoader(
-            dataset=self.data_train,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
-            shuffle=True,
-            # https://github.com/pytorch/vision/issues/2624#issuecomment-681811444
-            collate_fn=self.collater,
-        )
+        return self.data_train
 
     def val_dataloader(self):
-        return DataLoader(
-            dataset=self.data_val,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
-            shuffle=False,
-            collate_fn=self.collater,
-        )
-
-    def test_dataloader(self):
-        return DataLoader(
-            dataset=self.data_test,
-            batch_size=self.hparams.batch_size,
-            num_workers=self.hparams.num_workers,
-            pin_memory=self.hparams.pin_memory,
-            shuffle=False,
-            collate_fn=self.collater,
-        )
+        return self.data_val

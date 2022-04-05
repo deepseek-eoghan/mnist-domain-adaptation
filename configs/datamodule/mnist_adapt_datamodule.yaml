@@ -1,0 +1,7 @@
+_target_: src.datamodules.mnist_adapt_datamodule.MnistAdaptDataModule
+
+data_dir: ${data_dir}/mnist_adapt/ # data_dir is specified in config.yaml
+batch_size: 4
+num_classes: 11
+num_workers: 0
+pin_memory: False
