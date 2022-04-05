@@ -143,6 +143,7 @@ dmypy.json
 configs/local/default.yaml
 data/mnist_adapt/MNIST/
 data/mnist_adapt/mnist_m/
+data
 logs/
 wandb/
 .env
@@ -152,3 +153,4 @@ wandb/
 
 *.ckpt
 data/mnist_adapt/MNIST/raw/t10k-images-idx3-ubyte
+data/mnist_adapt/mnist_m.tar.gz
