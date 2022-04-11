@@ -94,7 +94,7 @@ def train(config: DictConfig) -> Optional[float]:
     trainer.fit(L_adapter, datamodule=datamodule)
 
     # Get metric score for hyperparameter optimization
-    # score = trainer.callback_metrics.get(config.get("optimized_metric"))
+    score = trainer.callback_metrics.get(config.get("optimized_metric"))
 
     # Test the model
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):

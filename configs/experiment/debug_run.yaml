@@ -8,7 +8,7 @@ defaults:
   - override /trainer: default.yaml
   - override /model: mnist_adapt_model.yaml
   - override /datamodule: mnist_adapt_datamodule.yaml
-  - override /callbacks: null #wandb.yaml
+  - override /callbacks: wandb.yaml #wandb.yaml
   - override /logger: wandb.yaml # wandb.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -20,16 +20,14 @@ name: "debug_run"
 
 seed: 100101101112115101101107046097105
 
-logger:
-  wandb:
-    offline: True
-    log_model: False
-
 trainer:
   min_epochs: 1
-  max_epochs: 2
+  max_epochs: 100
   gpus: 1
+  limit_train_batches: 0.05
+  limit_val_batches: 0.05
+  limit_test_batches: 0.05
 
 lr_finder: null
 batch_finder: null
-test_after_training: False
+test_after_training: False # Remain false until action on https://github.com/KevinMusgrave/pytorch-adapt/issues/58

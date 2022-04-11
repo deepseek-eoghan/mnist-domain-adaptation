@@ -66,5 +66,6 @@ class MnistAdaptDataModule(LightningDataModule):
     def val_dataloader(self):
         return self.data_val
 
-    def test_dataloader(self):
-        return self.data_test
+    # This can't be added until pytorch-adapt extends the Lightning class.
+    # def test_dataloader(self):
+    #     return self.data_test
