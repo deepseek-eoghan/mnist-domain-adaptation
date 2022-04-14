@@ -123,17 +123,15 @@ class UploadCheckpointsAsArtifact(Callback):
         experiment.log_artifact(ckpts)
 
 
-class LogBoundingBoxes(Callback):
-    """Generate images with bounding box predictions overlayed"""
+class LogImagePredictions(Callback):
+    """Logs a validation batch and their predictions to wandb.
+    Example adapted from:
+        https://wandb.ai/wandb/wandb-lightning/reports/Image-Classification-using-PyTorch-Lightning--VmlldzoyODk1NzY
+    """
 
-    def __init__(self):
-        self.pred_boxes = []
-        self.pred_labels = []
-        self.scores = []
-        self.images = []
-        self.gt_boxes = []
-        self.gt_labels = []
-        self.file_names = []
+    def __init__(self, num_samples: int = 8):
+        super().__init__()
+        self.num_samples = num_samples
         self.ready = True
 
     def on_sanity_check_start(self, trainer, pl_module):
@@ -143,156 +141,31 @@ class LogBoundingBoxes(Callback):
         """Start executing this callback only after all validation sanity checks end."""
         self.ready = True
 
-    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        """Gather data from single batch."""
-
+    def on_validation_epoch_end(self, trainer, pl_module):
         if self.ready:
-            if outputs is None:
-                return
-            for file_name in outputs["file_names"]:
-                self.file_names.append(file_name)
-            for item in outputs["test_outs"]:
-                self.pred_boxes.append(item["boxes"])
-                self.pred_labels.append(item["labels"])
-                self.scores.append(item["scores"])
-            for image in outputs["test_images"]:
-                self.images.append(image)
-            for item in outputs["test_gt"]:
-                self.gt_boxes.append(item["boxes"])
-                self.gt_labels.append(item["labels"])
-        return
-
-    def on_test_epoch_end(self, trainer, pl_module):
-        """Log bounding boxes."""
-        if self.ready:
-            logger = get_wandb_logger(trainer)
+            logger = get_wandb_logger(trainer=trainer)
             experiment = logger.experiment
 
-            class_dict = {
-                "one": 1,
-                "two": 2,
-                "three": 3,
-                "four": 4,
-                "five": 5,
-                "six": 6,
-                "seven": 7,
-                "eight": 8,
-                "nine": 9,
-                "zero": 10,
-            }
+            # get a validation batch from the validation dat loader
+            val_samples = next(iter(trainer.datamodule.val_dataloader()[0]))
+            val_imgs = val_samples['src_imgs'] # fix this in pytorch-adapt
+            val_labels = val_samples['src_labels'] 
 
-            image_classes = [{"id": int(v), "name": k} for k, v in class_dict.items()]
-            class_id_to_label = {int(v): k for k, v in class_dict.items()}
+            # run the batch through the network
+            val_imgs = val_imgs.to(device=pl_module.device)
+            logits = pl_module(val_imgs)['logits']
+            preds = torch.argmax(logits, dim=-1)
 
-            img_idx = 0
-            bounding_data = []
-
-            for image, v_boxes, v_labels, scores, file_name in zip(
-                self.images, self.pred_boxes, self.pred_labels, self.scores, self.file_names
-            ):
-                all_vboxes = []
-                vboxes_50 = []
-                vboxes_75 = []
-                for b_i, box in enumerate(v_boxes):
-                    # get coordinates and labels
-                    box_data = {
-                        "position": {
-                            "minX": box[0].item(),
-                            "maxX": box[2].item(),
-                            "minY": box[1].item(),
-                            "maxY": box[3].item(),
-                        },
-                        "class_id": v_labels[b_i].item(),
-                        "domain": "pixel",
-                        "scores": {"score": scores[b_i].item()},
-                    }
-                    all_vboxes.append(box_data)
-                    if scores[b_i].item() >= 0.5:
-                        vboxes_50.append(box_data)
-                    if scores[b_i].item() >= 0.75:
-                        vboxes_75.append(box_data)
-
-                # there's prob a better way of doing this, makes it (120,160,3)
-                np_image = np.swapaxes(np.swapaxes(image.cpu().numpy(), 0, -1), 0, 1)
-
-                if len(all_vboxes) > 0:
-                    box_image = wandb.Image(
-                        np_image,
-                        boxes={
-                            "predictions": {
-                                "box_data": all_vboxes,
-                                "class_labels": class_id_to_label,
-                            }
-                        },
-                        classes=image_classes,
-                    )
-                else:
-                    box_image = wandb.Image(np_image)
-
-                if len(vboxes_50) > 0:
-                    box50_image = wandb.Image(
-                        np_image,
-                        boxes={
-                            "predictions": {
-                                "box_data": vboxes_50,
-                                "class_labels": class_id_to_label,
-                            }
-                        },
-                        classes=image_classes,
-                    )
-                else:
-                    box50_image = wandb.Image(np_image)
-
-                if len(vboxes_75) > 0:
-                    box75_image = wandb.Image(
-                        np_image,
-                        boxes={
-                            "predictions": {
-                                "box_data": vboxes_75,
-                                "class_labels": class_id_to_label,
-                            }
-                        },
-                        classes=image_classes,
-                    )
-                else:
-                    box75_image = wandb.Image(np_image)
-
-                bounding_data.append([file_name, box_image, box50_image, box75_image])
-                img_idx = img_idx + 1
-
-            img_idx = 0  # reset image index
-            for image, gt_boxes, gt_labels in zip(self.images, self.gt_boxes, self.gt_labels):
-                all_gtboxes = []
-                for b_i, box in enumerate(gt_boxes):
-                    # get coordinates and labels
-                    box_data = {
-                        "position": {
-                            "minX": box[0].item(),
-                            "maxX": box[2].item(),
-                            "minY": box[1].item(),
-                            "maxY": box[3].item(),
-                        },
-                        "class_id": gt_labels[b_i].item(),
-                        "domain": "pixel",
-                    }
-                    all_gtboxes.append(box_data)
-                np_image = np.swapaxes(np.swapaxes(image.cpu().numpy(), 0, -1), 0, 1)
-
-                gtbox_image = wandb.Image(
-                    np_image,
-                    boxes={
-                        "ground_truth": {
-                            "box_data": all_gtboxes,
-                            "class_labels": class_id_to_label,
-                        }
-                    },
-                    classes=image_classes,
-                )
-
-                bounding_data[img_idx].append(gtbox_image)
-                img_idx = img_idx + 1
-
-            columns = ["file_name", "bbox_preds", "bbox_50", "bbox_75", "bbox_gt"]
-            image_pred_table = wandb.Table(data=bounding_data, columns=columns, dtype=AnyType)
-
-            experiment.log({f"test_set_bbox_preds/{experiment.name}": image_pred_table})
+            # log the images as wandb Image
+            experiment.log(
+                {
+                    f"Images/{experiment.name}": [
+                        wandb.Image(x, caption=f"Pred:{pred}, Label:{y}")
+                        for x, pred, y in zip(
+                            val_imgs[: self.num_samples],
+                            preds[: self.num_samples],
+                            val_labels[: self.num_samples],
+                        )
+                    ]
+                }
+            )

@@ -49,9 +49,12 @@ class MnistAdaptDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
-            datasets = get_mnist_mnistm(["mnist"], ["mnistm"], folder=self.hparams.data_dir, download=False)
+            datasets = get_mnist_mnistm(["mnist"], ["mnistm"], folder=self.hparams.data_dir, download=False, return_target_with_labels=True)
+            datasets["target_train"] = datasets["target_train_with_labels"]
+            datasets["target_val"] = datasets["target_val_with_labels"]
             dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers)
-            validator = IMValidator()
+            validator = AccuracyValidator(key_map={"target_train": "src_val"})
+            # validator = AccuracyValidator()
             # validator = MultipleValidators([AccuracyValidator(), IMValidator()])
             self.dataloaders = dc(**filter_datasets(datasets, validator))
             self.data_train = self.dataloaders.pop("train")

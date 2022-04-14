@@ -16,17 +16,22 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "debug_run"
+name: "debug_run_3"
 
 seed: 100101101112115101101107046097105
 
+# logger:
+#   wandb:
+#     log_model: False
+#     offline: True
+
 trainer:
   min_epochs: 1
-  max_epochs: 100
+  max_epochs: 25
   gpus: 1
-  limit_train_batches: 0.05
-  limit_val_batches: 0.05
-  limit_test_batches: 0.05
+  limit_train_batches: 0.025
+  limit_val_batches: 0.025
+  limit_test_batches: 0.025
 
 lr_finder: null
 batch_finder: null
