@@ -54,13 +54,11 @@ class MnistAdaptDataModule(LightningDataModule):
             datasets["target_val"] = datasets["target_val_with_labels"]
             dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers)
             validator = AccuracyValidator(key_map={"target_train": "src_val"})
-            # validator = AccuracyValidator()
-            # validator = MultipleValidators([AccuracyValidator(), IMValidator()])
             self.dataloaders = dc(**filter_datasets(datasets, validator))
             self.data_train = self.dataloaders.pop("train")
             self.data_val = list(self.dataloaders.values())
-            test_dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, val_names=["target_test"])
-            self.data_test = test_dc(target_test=datasets['target_val'])['target_test']
+            # test_dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, val_names=["target_test"])
+            # self.data_test = test_dc(target_test=datasets['target_val'])['target_test']
             return            
 
     def train_dataloader(self):

@@ -148,8 +148,8 @@ class LogImagePredictions(Callback):
 
             # get a validation batch from the validation dat loader
             val_samples = next(iter(trainer.datamodule.val_dataloader()[0]))
-            val_imgs = val_samples['src_imgs'] # fix this in pytorch-adapt
-            val_labels = val_samples['src_labels'] 
+            val_imgs = val_samples['target_imgs'] 
+            val_labels = val_samples['target_labels'] 
 
             # run the batch through the network
             val_imgs = val_imgs.to(device=pl_module.device)

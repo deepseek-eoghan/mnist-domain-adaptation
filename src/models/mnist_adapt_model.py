@@ -16,7 +16,7 @@ from pytorch_adapt.frameworks.lightning import Lightning
 from pytorch_adapt.adapters import DANN
 from pytorch_adapt.containers import Models, Optimizers
 from pytorch_adapt.models import Discriminator, mnistC, mnistG
-from pytorch_adapt.validators import IMValidator
+from pytorch_adapt.validators import AccuracyValidator
 
 
 class MnistAdaptLitModel(LightningModule):
@@ -53,7 +53,7 @@ class MnistAdaptLitModel(LightningModule):
         self.C = mnistC(pretrained=True)
         self.D = Discriminator(in_size=1200, h=256)
         self.models = Models({"G": self.G, "C": self.C, "D": self.D})
-        self.validator = IMValidator()
+        self.validator = AccuracyValidator(key_map={"target_train": "src_val"})
         self.optimizers = Optimizers((torch.optim.Adam, {"lr": self.hparams.lr}))
 
         self.adapter = DANN(models=self.models, optimizers=self.optimizers)

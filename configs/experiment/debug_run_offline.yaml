@@ -16,9 +16,14 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "debug_run_4"
+name: "debug_run_offline"
 
 seed: 100101101112115101101107046097105
+
+logger:
+  wandb:
+    log_model: False
+    offline: True
 
 trainer:
   min_epochs: 1
