@@ -6,7 +6,7 @@
 defaults:
   - override /mode: exp.yaml
   - override /trainer: default.yaml
-  - override /model: mnist_adapt_model.yaml
+  - override /model: mnist.yaml
   - override /datamodule: mnist_adapt_datamodule.yaml
   - override /callbacks: wandb.yaml #wandb.yaml
   - override /logger: wandb.yaml # wandb.yaml
@@ -16,14 +16,14 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "debug_run_offline"
-
-seed: 100101101112115101101107046097105
+name: "debug_run_mnist"
 
 logger:
   wandb:
     log_model: False
     offline: True
+
+seed: 100101101112115101101107046097105
 
 trainer:
   min_epochs: 1
@@ -32,5 +32,7 @@ trainer:
   limit_train_batches: 0.025
   limit_val_batches: 0.025
   limit_test_batches: 0.025
+
+adapt: False
 
 test_after_training: False # Remain false until action on https://github.com/KevinMusgrave/pytorch-adapt/issues/58

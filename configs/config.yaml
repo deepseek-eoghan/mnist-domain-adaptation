@@ -49,3 +49,5 @@ batch_finder: null
 # name of the run is accessed by loggers
 # should be used along with experiment mode
 name: mnist-adapt
+
+adapt: True

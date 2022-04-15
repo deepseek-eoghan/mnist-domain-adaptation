@@ -153,7 +153,14 @@ class LogImagePredictions(Callback):
 
             # run the batch through the network
             val_imgs = val_imgs.to(device=pl_module.device)
-            logits = pl_module(val_imgs)['logits']
+            
+            # the logits are the only value from the standard linear classifier.
+            # so need to check which model is running.
+            # would be better to check by name or something TODO:
+            if hasattr(pl_module, 'net'):
+                logits = pl_module(val_imgs)
+            else:
+                logits = pl_module(val_imgs)['logits']
             preds = torch.argmax(logits, dim=-1)
 
             # log the images as wandb Image

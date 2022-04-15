@@ -90,8 +90,11 @@ def train(config: DictConfig) -> Optional[float]:
     # Train the model
     log.info("Starting training!")
     # pytorch-adapt DANN
-    L_adapter = Lightning(model.adapter, validator=model.validator)
-    trainer.fit(L_adapter, datamodule=datamodule)
+    if config.get("adapt"):
+        L_adapter = Lightning(model.adapter, validator=model.validator)
+        trainer.fit(L_adapter, datamodule=datamodule)
+    else:
+        trainer.fit(model, datamodule=datamodule)
 
     # Get metric score for hyperparameter optimization
     score = trainer.callback_metrics.get(config.get("optimized_metric"))
