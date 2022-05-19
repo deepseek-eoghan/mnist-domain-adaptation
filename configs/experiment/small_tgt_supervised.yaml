@@ -16,21 +16,23 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "debug_run_4"
+name: "small_tgt_supervised"
 
 seed: 100101101112115101101107046097105
 
+model:
+  target_train: True
+
 datamodule:
-  adapt: True
+  small_tgt: True
+  adapt: False
 
 trainer:
   min_epochs: 1
-  max_epochs: 25
+  max_epochs: 100
   gpus: 1
-  limit_train_batches: 0.025
-  limit_val_batches: 0.025
-  limit_test_batches: 0.025
+  limit_val_batches: 0.5
 
 adapt: False
 
-test_after_training: False # Remain false until action on https://github.com/KevinMusgrave/pytorch-adapt/issues/58
+test_after_training: False

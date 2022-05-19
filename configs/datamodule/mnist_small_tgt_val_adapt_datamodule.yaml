@@ -1,4 +1,4 @@
-_target_: src.datamodules.mnist_adapt_datamodule.MnistAdaptDataModule
+_target_: src.datamodules.mnist_small_tgt_val_adapt_datamodule.MnistSmallTgtValAdaptDataModule
 
 data_dir: ${data_dir}/mnist_adapt/ # data_dir is specified in config.yaml
 batch_size: 32

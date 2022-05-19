@@ -18,7 +18,7 @@ from pytorch_adapt.frameworks.utils import filter_datasets
 import src.datamodules.mnist_generate.mnist as mnist
 import src.datamodules.mnist_generate.generate_data as generate_data
 
-class MnistAdaptDataModule(LightningDataModule):
+class MnistSmallTgtValAdaptDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str = "data/mnistm/",
@@ -26,7 +26,6 @@ class MnistAdaptDataModule(LightningDataModule):
         num_workers: int = 0,
         pin_memory: bool = False,
         adapt: bool = False,
-        small_tgt: bool = False
     ):
         super().__init__()
 
@@ -51,17 +50,14 @@ class MnistAdaptDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
             datasets = get_mnist_mnistm(["mnist"], ["mnistm"], folder=self.hparams.data_dir, download=False, return_target_with_labels=True)
-            datasets["target_train"] = datasets["target_train_with_labels"]
+            # datasets["target_train"] = datasets["target_train_with_labels"]
             datasets["target_val"] = datasets["target_val_with_labels"]
             dc = DataloaderCreator(batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers)
 
             if self.hparams.adapt:
-                self.dataloaders = dc(train=CombinedSourceAndTargetDataset(datasets['src_train'], datasets['target_val']), target_val=datasets['target_train'])
+                self.dataloaders = dc(train=CombinedSourceAndTargetDataset(datasets['src_train'], datasets['target_train']), target_val=datasets['target_val'])
             else:
-                if self.hparams.small_tgt:
-                    self.dataloaders = dc(train=datasets['target_val'], target_val=datasets['target_train'])
-                else:
-                    self.dataloaders = dc(train=datasets['src_train'], target_val=datasets['target_train'])
+                self.dataloaders = dc(train=datasets['src_train'], target_val=datasets['target_val'])
 
             self.data_train = self.dataloaders.pop("train")
             self.data_val = list(self.dataloaders.values())

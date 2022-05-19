@@ -27,6 +27,7 @@ class MNISTLitModule(LightningModule):
         net: torch.nn.Module,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
+        target_train: bool = False,
     ):
         super().__init__()
 
@@ -64,7 +65,11 @@ class MNISTLitModule(LightningModule):
         return loss, preds, y
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss, preds, targets = self.step(batch, target=False)
+
+        if self.hparams.target_train:
+            loss, preds, targets = self.step(batch, target=True)
+        else:
+            loss, preds, targets = self.step(batch, target=False)
 
         # log train metrics
         acc = self.train_acc(preds, targets)

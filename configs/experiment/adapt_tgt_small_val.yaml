@@ -6,8 +6,8 @@
 defaults:
   - override /mode: exp.yaml
   - override /trainer: default.yaml
-  - override /model: mnist.yaml
-  - override /datamodule: mnist_adapt_datamodule.yaml
+  - override /model: mnist_adapt_model.yaml
+  - override /datamodule: mnist_small_tgt_val_adapt_datamodule.yaml
   - override /callbacks: wandb.yaml #wandb.yaml
   - override /logger: wandb.yaml # wandb.yaml
 
@@ -16,7 +16,12 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "debug_run_4"
+
+logger:
+  wandb:
+    project: "mnist-adapt-tgt-small"
+
+name: "domain_adapt"
 
 seed: 100101101112115101101107046097105
 
@@ -25,12 +30,9 @@ datamodule:
 
 trainer:
   min_epochs: 1
-  max_epochs: 25
+  max_epochs: 100
   gpus: 1
-  limit_train_batches: 0.025
-  limit_val_batches: 0.025
-  limit_test_batches: 0.025
 
-adapt: False
+adapt: True
 
-test_after_training: False # Remain false until action on https://github.com/KevinMusgrave/pytorch-adapt/issues/58
+test_after_training: False 

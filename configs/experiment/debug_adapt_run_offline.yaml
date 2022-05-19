@@ -20,6 +20,9 @@ name: "debug_run_offline"
 
 seed: 100101101112115101101107046097105
 
+datamodule:
+  adapt: True
+
 logger:
   wandb:
     log_model: False
@@ -31,6 +34,7 @@ trainer:
   gpus: 1
   limit_train_batches: 0.025
   limit_val_batches: 0.025
-  limit_test_batches: 0.025
+
+adapt: True
 
 test_after_training: False # Remain false until action on https://github.com/KevinMusgrave/pytorch-adapt/issues/58

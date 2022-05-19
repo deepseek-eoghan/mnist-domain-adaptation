@@ -1,13 +1,13 @@
 # @package _global_
 
 # to execute this experiment run:
-# python run.py experiment=mnist_detection_example.yaml
+# python run.py experiment=mnist_adapt_example.yaml
 
 defaults:
   - override /mode: exp.yaml
   - override /trainer: default.yaml
-  - override /model: mnist_detection_model.yaml
-  - override /datamodule: mnist_detection_datamodule.yaml
+  - override /model: mnist.yaml
+  - override /datamodule: mnist_small_tgt_val_adapt_datamodule.yaml
   - override /callbacks: wandb.yaml #wandb.yaml
   - override /logger: wandb.yaml # wandb.yaml
 
@@ -16,22 +16,23 @@ defaults:
 
 # name of the run determines folder name in logs
 # it's also accessed by loggers
-name: "full_run"
+
+logger:
+  wandb:
+    project: "mnist-adapt-tgt-small"
+
+name: "no_domain_adapt"
 
 seed: 100101101112115101101107046097105
 
-callbacks:
-  telegram_notification:
-    _target_: src.callbacks.whosthere_callbacks.TelegramNotification
-  stochastic_weight_averaging:
-    _target_: pytorch_lightning.callbacks.StochasticWeightAveraging
+datamodule:
+  adapt: False
 
 trainer:
   min_epochs: 1
-  max_epochs: -1
-  gradient_clip_val: 0.5
-  accumulate_grad_batches: 2
+  max_epochs: 100
   gpus: 1
 
-lr_finder: True
-batch_finder: True
+adapt: False
+
+test_after_training: False 
